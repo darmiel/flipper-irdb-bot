@@ -77,13 +77,6 @@ func (b *Bot) runDuplicateChecker(filePath string) ([]byte, error) {
 	return cmd.CombinedOutput()
 }
 
-func orEmpty(inp string) string {
-	if len(strings.TrimSpace(inp)) == 0 {
-		return "<no result>"
-	}
-	return inp
-}
-
 func limit(msg string) string {
 	if len(msg) > MaxDiscordMessageLength {
 		return msg[:MaxDiscordMessageLength-4] + "..."
@@ -167,7 +160,7 @@ func (b *Bot) checkFile(guildID, channelID, messageID, userID, fileName, filePat
 		allGood = false
 	} else {
 		_, _ = b.session.ChannelMessageEdit(thread.ID, linterMsg.ID,
-			"All good 😊")
+			"✅ No Issues Found")
 	}
 
 	// run duplicate checker
@@ -183,7 +176,7 @@ func (b *Bot) checkFile(guildID, channelID, messageID, userID, fileName, filePat
 		allGood = false
 	} else {
 		_, _ = b.session.ChannelMessageEdit(thread.ID, dupeMsg.ID,
-			"All good 😊")
+			"✅ No Duplicates Found")
 	}
 
 	if allGood {
@@ -214,7 +207,7 @@ func (b *Bot) unsafeEmojiRemove(messageID, channelID, emojiID string) {
 	}
 }
 
-func (b *Bot) messageCreateCapturedFiles(s *discordgo.Session, m *discordgo.MessageCreate) {
+func (b *Bot) messageCreateCapturedFiles(_ *discordgo.Session, m *discordgo.MessageCreate) {
 	// ignore message without attachments, since we only want to check .ir files
 	if len(m.Attachments) == 0 {
 		return
