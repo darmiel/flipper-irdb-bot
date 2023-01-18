@@ -41,7 +41,9 @@ func main() {
 		fmt.Println("error creating client,", err)
 		return
 	}
-	discord.Identify.Intents = discordgo.IntentsGuildMessages | discordgo.IntentMessageContent
+	discord.Identify.Intents = discordgo.IntentsGuildMessages |
+		discordgo.IntentMessageContent |
+		discordgo.IntentsGuildMessageReactions
 
 	// create instance of bot and create message handlers
 	bot := &Bot{
@@ -61,22 +63,12 @@ func main() {
 	// #captured-files
 	bot.handlers[config.CapturedFilesChannelID] = bot.messageCreateCapturedFiles
 	discord.AddHandler(bot.messageCreate)
+	discord.AddHandler(bot.messageReact)
 
 	if err = discord.Open(); err != nil {
 		fmt.Println("error opening connection,", err)
 		return
 	}
-
-	// check file
-	/*
-		if err = bot.checkFile(
-			"710491120903127080",
-			"test-name.ir",
-			"downloads/1064875662147588147/710491120903127080/test.ir",
-		); err != nil {
-			fmt.Println("error checking file:", err)
-		}
-	*/
 
 	// Wait here until CTRL-C or other term signal is received.
 	fmt.Println("Bot is now running.  Press CTRL-C to exit.")

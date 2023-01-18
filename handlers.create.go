@@ -99,12 +99,11 @@ func (b *Bot) checkFile(guildID, channelID, messageID, userID, fileName, filePat
 		return err
 	}
 	defer f.Close()
-	threadName := fmt.Sprintf("`%s` by <@%s>\n> %s",
-		fileName, userID,
-		fmt.Sprintf("https://discord.com/channels/%s/%s/%s",
-			guildID, channelID, messageID))
 	data := &discordgo.MessageSend{
-		Content: threadName,
+		Content: fmt.Sprintf("`%s` by <@%s>\n> %s",
+			fileName, userID,
+			fmt.Sprintf("<https://discord.com/channels/%s/%s/%s>",
+				guildID, channelID, messageID)),
 		Files: []*discordgo.File{
 			{Name: fileName, Reader: f},
 		},
@@ -116,7 +115,9 @@ func (b *Bot) checkFile(guildID, channelID, messageID, userID, fileName, filePat
 	}
 
 	// create thread for message
-	thread, err := b.session.MessageThreadStart(msg.ChannelID, msg.ID, strings.Split(threadName, "\n")[0], 4320) // 48 hours
+	thread, err := b.session.MessageThreadStart(msg.ChannelID, msg.ID,
+		fmt.Sprintf("%s | %s", fileName, msg.ID),
+		10080) // 48 hours
 	if err != nil {
 		b.error("cannot create thread", err)
 		return err
@@ -124,7 +125,7 @@ func (b *Bot) checkFile(guildID, channelID, messageID, userID, fileName, filePat
 
 	// linter header
 	_, _ = b.session.ChannelMessageSend(thread.ID,
-		"https://media.discordapp.net/attachments/792555443846119435/1065028898817052743/header-linter.png?width=1780&height=310")
+		"https://media.discordapp.net/attachments/800114653820747796/1065045437297467432/banner-linter.png?width=2268&height=310")
 
 	// loading message for linter and dupe check
 	linterMsg, err := b.session.ChannelMessageSend(thread.ID, "Working on it <a:loading:1064886986780983356>")
@@ -135,7 +136,7 @@ func (b *Bot) checkFile(guildID, channelID, messageID, userID, fileName, filePat
 
 	// dupe header
 	_, _ = b.session.ChannelMessageSend(thread.ID,
-		"https://media.discordapp.net/attachments/792555443846119435/1065028982506000414/header-dupe-check.png?width=1780&height=310")
+		"https://media.discordapp.net/attachments/800114653820747796/1065045436597018664/banner-dupe-check.png?width=2268&height=310")
 
 	dupeMsg, err := b.session.ChannelMessageSend(thread.ID, "Working on it <a:loading:1064886986780983356>")
 	if err != nil {
@@ -143,6 +144,14 @@ func (b *Bot) checkFile(guildID, channelID, messageID, userID, fileName, filePat
 		return err
 	}
 
+	// control header
+	_, _ = b.session.ChannelMessageSend(thread.ID,
+		"https://media.discordapp.net/attachments/800114653820747796/1065046081668403311/banner-control.png?width=2268&height=310")
+
+	controlMsg, _ := b.session.ChannelMessageSend(thread.ID,
+		"Waiting for checks <a:loading:1064886986780983356>")
+
+	/// run checks
 	allGood := true
 
 	// run linter
@@ -181,6 +190,15 @@ func (b *Bot) checkFile(guildID, channelID, messageID, userID, fileName, filePat
 		b.unsafeEmojiAdd(msg.ID, msg.ChannelID, "👍")
 	}
 
+	if controlMsg != nil {
+		_, _ = b.session.ChannelMessageEdit(controlMsg.ChannelID, controlMsg.ID,
+			"` ✅ ` - Mark File as Completed\n` 💩 ` - Mark File as Rejected\n` 🦋 `️ - Close without Comment\nctl$")
+
+		b.unsafeEmojiAdd(controlMsg.ID, controlMsg.ChannelID, "✅")
+		b.unsafeEmojiAdd(controlMsg.ID, controlMsg.ChannelID, "💩")
+		b.unsafeEmojiAdd(controlMsg.ID, controlMsg.ChannelID, "🦋")
+	}
+
 	return nil
 }
 
@@ -192,7 +210,7 @@ func (b *Bot) unsafeEmojiAdd(messageID, channelID, emojiID string) {
 
 func (b *Bot) unsafeEmojiRemove(messageID, channelID, emojiID string) {
 	if err := b.session.MessageReactionRemove(channelID, messageID, emojiID, b.session.State.User.ID); err != nil {
-		fmt.Println("cannot add reaction to", messageID, "@", channelID, ",", err)
+		fmt.Println("cannot remove reaction", emojiID, "from", messageID, "@", channelID, ",", err)
 	}
 }
 
